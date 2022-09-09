@@ -66,7 +66,6 @@ func subHandler(client mqtt.Client, msg mqtt.Message) {
 	println("artist: ", d.Artist)
 	println("track: ", d.Title)
 	display.ClearDisplay()
-	display.ClearBuffer()
 	time.Sleep(3000 * time.Millisecond) // needs min ~3 sec
 	var line int16
 	line = writeString(d.Artist, 22, 50)
@@ -75,8 +74,10 @@ func subHandler(client mqtt.Client, msg mqtt.Message) {
 }
 
 func writeString(s string, ln int, line int16) int16 {
+	println("Start writeString")
 	if len(s) < ln {
 		tinyfont.WriteLineRotated(&display, font, line, 0, s, white, tinyfont.ROTATION_90)
+		println("End writeString (short)")
 		return line
 	} else {
 		ss := strings.Split(s, " ")
@@ -86,11 +87,14 @@ func writeString(s string, ln int, line int16) int16 {
 		tinyfont.WriteLineRotated(&display, font, line, 0, firstLine, white, tinyfont.ROTATION_90)
 		line -= 15
 		tinyfont.WriteLineRotated(&display, font, line, 0, secondLine, white, tinyfont.ROTATION_90)
+		println("End writeString (long)")
 		return line
 	}
 }
 
 func main() {
+	time.Sleep(3 * time.Second)
+	println("At the beginning of main")
 	err := machine.I2C0.Configure(machine.I2CConfig{
 		// I think these are the defaults
 		Frequency: machine.TWI_FREQ_400KHZ,
@@ -103,9 +107,19 @@ func main() {
 		return
 	}
 	time.Sleep(5 * time.Millisecond)
+	println("Creating sh1107 display object")
 	display = sh1107.New(machine.I2C0, 0x3C, false)
+	time.Sleep(5 * time.Millisecond)
+	println("Configuring sh1107 display object")
 	display.Configure()
+	println("ClearDisplay")
 	display.ClearDisplay()
+	println("Display Test0")
+	time.Sleep(5 * time.Second)
+	// It is dying here !!!!!!!!!!!!!!!!!!
+	println("Display Test1")
+	_ = writeString("Display Test", 22, 50)
+	display.Display()
 
 	// Configure SPI for 8Mhz, Mode 0, MSB First
 	// using default pins so spi.Configure({machine.SPIConfig{}) should be fine
@@ -132,6 +146,9 @@ func main() {
 		println("GetFwVersion Error:", err)
 	}
 	println("firmware:", s)
+	display.ClearDisplay()
+	writeString(s, 22, 50)
+	display.Display()
 
 	//time.Sleep(10 * time.Second) ///////
 
